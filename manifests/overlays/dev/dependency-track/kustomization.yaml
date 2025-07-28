@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/dependency-track
+  - ../../../base/postgresql
+  - ../../../base/traefik
+
+# patches:
+#   - path: patch-dependency-track-apiserver-service.yaml
+#   - path: patch-dependency-track-frontend-deployment.yaml
+#   - path: patch-dependency-track-frontend-service.yaml

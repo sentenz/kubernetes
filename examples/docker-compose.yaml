@@ -2,12 +2,7 @@ services:
   k3s-server:
     image: "rancher/k3s:${K3S_VERSION:-latest}"
     hostname: k3s-server
-    container_name: k3s-server
-    command:
-      - server
-      # - --cluster-init
-      - --disable servicelb
-      - --disable traefik
+    command: server --cluster-init --disable servicelb --disable traefik
     privileged: true
     tmpfs:
       - /run
@@ -27,17 +22,18 @@ services:
     ports:
       - "6443:6443" # Kubernetes API server
       - "80:80" # Optional: For ingress controller HTTP (if used)
-      - "443:443" # Optional: For ingress controller HTTPS (if used)
-      - "30080:30080" # Dependency-Track Frontend NodePort
-      - "30081:30081" # Dependency-Track API NodePort
+      # - "443:443" # Optional: For ingress controller HTTPS (if used)
+      - "30080:30080" # NodePort for Dependency-Track API
+      - "30081:30081" # NodePort for Dependency-Track Frontend
+      - "30082:30082" # NodePort for PostgreSQL
     networks:
       - k3s-network
+    restart: unless-stopped
 
   k3s-agent:
     image: "rancher/k3s:${K3S_VERSION:-latest}"
     hostname: k3s-agent
-    command:
-      - agent
+    command: agent
     privileged: true
     tmpfs:
       - /run

@@ -28,14 +28,15 @@
   Usage
           make <task>
 
-          bootstrap             Initialize a software development workspace with requisites
-          setup                 Install and configure all dependencies essential for development
-          teardown              Remove development artifacts and restore the host to its pre-setup state
-          k8s-setup             Set up the development environment using Docker Compose
-          k8s-teardown          Tear down the development environment using Docker Compose
-          k8s-list-service      List all services
-          k8s-list-namespace    List all namespaces
-          k8s-list-pod          List all pods
-          k8s-list-status       List all status
-          helm-pull             Vendor Helm chart for Dependency-Track
+          bootstrap                       Initialize a software development workspace with requisites
+          setup                           Install and configure all dependencies essential for development
+          teardown                        Remove development artifacts and restore the host to its pre-setup state
+          k8s-setup                       Set up the development environment using Docker Compose
+          k8s-teardown                    Tear down the development environment using Docker Compose
+          k8s-deploy-dependency-track     Deploy Kubernetes manifests for Dependency-Track
+          k8s-destroy-dependency-track    Destroy Kubernetes manifests for Dependency-Track
+          k8s-render-manifests            Render all Kubernetes manifests
+          k8s-monitor-status              Monitor the status of all Kubernetes resources
+          helm-vendor-charts              Vendor all Helm charts
+          helm-render-charts              Render all Helm charts
   ```

@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dependency-track
+  namespace: dependency-track
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`dependency-track.localhost`)
+      kind: Rule
+      services:
+        - name: dependency-track-frontend
+          port: 8080
