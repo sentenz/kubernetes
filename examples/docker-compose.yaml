@@ -21,11 +21,8 @@ services:
       - ./config:/output
     ports:
       - "6443:6443" # Kubernetes API server
-      - "80:80" # Optional: For ingress controller HTTP (if used)
-      # - "443:443" # Optional: For ingress controller HTTPS (if used)
-      - "30080:30080" # NodePort for Dependency-Track API
-      - "30081:30081" # NodePort for Dependency-Track Frontend
-      - "30082:30082" # NodePort for PostgreSQL
+      - "80:80"     # Ingress controller HTTP
+      - "443:443"   # Ingress controller HTTPS
     networks:
       - k3s-network
     restart: unless-stopped
