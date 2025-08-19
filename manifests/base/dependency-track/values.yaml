@@ -1,5 +1,7 @@
 ---
 apiServer:
+  service:
+    type: ClusterIP
   metrics:
     enabled: false
   extraEnv:
@@ -13,10 +15,11 @@ apiServer:
       value: dtrack
     - name: ALPINE_DATABASE_PASSWORD
       value: dtrack
-  service:
-    type: ClusterIP
 
 frontend:
   service:
     type: ClusterIP
-  apiBaseUrl: "http://api.dependency-track.localhost"
+  apiBaseUrl: "https://api.dependency-track.localhost"
+
+ingress:
+  enabled: false

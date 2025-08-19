@@ -4,5 +4,7 @@ kind: Kustomization
 resources:
 - ../../../base
 
-# patches:
-#   - path: patch.yaml
+# Patches to adapt Traefik for a remote (EKS) cluster
+patches:
+	- path: patch-traefik-service-loadbalancer.yaml
+	- path: patch-traefik-deployment-hostnetwork-false.yaml

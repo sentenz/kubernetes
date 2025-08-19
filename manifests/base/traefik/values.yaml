@@ -1,19 +1,30 @@
-deployment:
-  enabled: true
+---
+# NOTE Traefik will discover the TLS secret via the Ingress definition; static certificates are handled by Kubernetes Secret
 
+# Service type can be ClusterIP with a separate LoadBalancer (e.g., MetalLB) or directly LoadBalancer.
 service:
-  type: NodePort
-  ports:
-    web:
-      port: 80
-      nodePort: 30080
-    websecure:
-      port: 443
-      nodePort: 30443
+  type: ClusterIP
 
-# Disable SSL for local development
-additionalArguments:
-  - "--entrypoints.web.address=:80"
-  - "--entrypoints.websecure.address=:443"
-  - "--serversTransport.insecureSkipVerify=true"
-  - "--api.insecure=true"
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+# Tighten dashboard exposure by default; override per env if a dashboard is needed.
+ingressRoute:
+  dashboard:
+    enabled: false
+
+# Optionally enable access logs & forward headers
+logs:
+  general:
+    level: INFO
+
+hostNetwork: true
+
+# EntryPoints are pre-configured by the chart; enable HTTP→HTTPS redirect:
+deployment:
+  additionalArguments:
+    - "--entrypoints.web.address=:80"
+    - "--entrypoints.websecure.address=:443"
+    - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+    - "--entrypoints.web.http.redirections.entryPoint.scheme=https"

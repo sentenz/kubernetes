@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dtrack-api
+  namespace: dependency-track
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: api.dependency-track.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dependency-track-api-server
+                port:
+                  number: 8080
+  tls:
+    - hosts: [api.dependency-track.localhost]
+      secretName: dependency-track-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dtrack-frontend
+  namespace: dependency-track
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: dependency-track.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dependency-track-frontend
+                port:
+                  number: 8080
+  tls:
+    - hosts: [dependency-track.localhost]
+      secretName: dependency-track-tls
