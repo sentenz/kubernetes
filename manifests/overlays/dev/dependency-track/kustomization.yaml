@@ -9,9 +9,9 @@ resources:
   - ../../../base/dependency-track
   - ../../../base/postgresql
   - ../../../base/traefik
-  - ingress.yaml
 
 patches:
+  - path: patch-dependency-track-ingress.yaml
   - path: patch-traefik-deployment.yaml
 
 secretGenerator:

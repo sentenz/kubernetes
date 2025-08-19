@@ -1,27 +1,22 @@
 ---
-# NOTE Traefik will discover the TLS secret via the Ingress definition; static certificates are handled by Kubernetes Secret
-
-# Service type can be ClusterIP with a separate LoadBalancer (e.g., MetalLB) or directly LoadBalancer.
 service:
   type: ClusterIP
 
 ingressClass:
+  name: traefik
   enabled: true
   isDefaultClass: true
 
-# Tighten dashboard exposure by default; override per env if a dashboard is needed.
 ingressRoute:
   dashboard:
     enabled: false
 
-# Optionally enable access logs & forward headers
 logs:
   general:
     level: INFO
 
 hostNetwork: true
 
-# EntryPoints are pre-configured by the chart; enable HTTP→HTTPS redirect:
 deployment:
   additionalArguments:
     - "--entrypoints.web.address=:80"

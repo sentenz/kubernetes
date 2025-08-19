@@ -22,4 +22,4 @@ frontend:
   apiBaseUrl: "https://api.dependency-track.localhost"
 
 ingress:
-  enabled: false
+  enabled: true
