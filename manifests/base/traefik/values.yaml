@@ -15,8 +15,6 @@ logs:
   general:
     level: INFO
 
-hostNetwork: true
-
 deployment:
   additionalArguments:
     - "--entrypoints.web.address=:80"
