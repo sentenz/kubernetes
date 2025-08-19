@@ -11,23 +11,6 @@ spec:
     - host: "dependency-track.localhost"
       http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: dependency-track-frontend
-                port:
-                  name: web
-    - host: "api.dependency-track.localhost"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: dependency-track-api-server
-                port:
-                  name: web
           - path: /api
             pathType: Prefix
             backend:
@@ -42,8 +25,14 @@ spec:
                 name: dependency-track-api-server
                 port:
                   name: web
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dependency-track-frontend
+                port:
+                  name: web
   tls:
     - hosts:
         - "dependency-track.localhost"
-        - "api.dependency-track.localhost"
       secretName: dependency-track-tls

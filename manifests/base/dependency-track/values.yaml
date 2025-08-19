@@ -19,7 +19,7 @@ apiServer:
 frontend:
   service:
     type: ClusterIP
-  apiBaseUrl: "https://api.dependency-track.localhost"
+  apiBaseUrl: "https://dependency-track.localhost"
 
 ingress:
   enabled: true
