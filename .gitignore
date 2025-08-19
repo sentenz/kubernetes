@@ -1,3 +1,8 @@
+# https://www.toptal.com/developers/gitignore/
+
+### Helm ###
+# Chart dependencies
+**/charts/*.tgz
+
 logs/
 render/
-**/charts/*.tgz

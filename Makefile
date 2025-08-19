@@ -22,7 +22,7 @@ K8S_ENVIRONMENT ?= $(ENV)
 default: help
 
 help:
-	@awk 'BEGIN {printf "Task Runner\n\tA collection of tasks used in the current project.\n\n"}'
+	@awk 'BEGIN {printf "Tasks\n\tA collection of tasks used in the current project.\n\n"}'
 	@awk 'BEGIN {printf "Usage\n\tmake $(shell tput -Txterm setaf 6)<task>$(shell tput -Txterm sgr0)\n\n"}' $(MAKEFILE_LIST)
 	@awk '/^##/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:alnum:]_-]+:/{print "$(shell tput -Txterm setaf 6)\t" substr($$1,1,index($$1,":")) "$(shell tput -Txterm sgr0)",c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
 .PHONY: help
@@ -69,49 +69,46 @@ k8s-teardown:
 
 # Usage: make k8s-deploy-<env>
 #
-# Deploy Kubernetes manifests integrating Helm charts and Kustomize environment-specific overlays
-k8s-deploy-%:
+# Template to deploy Kubernetes manifests integrated Helm charts and Kustomize environment-specific overlays
+template-k8s-deploy-%:
 	@$(K8S_KUSTOMIZE_BIN) build manifests/overlays/$*/$(K8S_STACK_DIR) \
 		--enable-helm --load-restrictor=LoadRestrictionsNone \
 		| kubectl apply --kubeconfig $(K8S_KUBECONFIG) -f -
-.PHONY: k8s-deploy-%
+.PHONY: template-k8s-deploy-%
 
 ## Deploy Kubernetes manifests for Dependency-Track
 k8s-deploy-dependency-track:
-	@$(MAKE) k8s-deploy-$(K8S_ENVIRONMENT) \
-		K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-deploy-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-deploy-dependency-track
 
 # Usage: make k8s-destroy-<env>
 #
-#	Destroy Kubernetes manifests integrated Helm charts and Kustomize environment-specific overlays
-k8s-destroy-%:
+# Template to destroy Kubernetes manifests integrated Helm charts and Kustomize environment-specific overlays
+template-k8s-destroy-%:
 	@$(K8S_KUSTOMIZE_BIN) build manifests/overlays/$*/$(K8S_STACK_DIR) \
 		--enable-helm --load-restrictor=LoadRestrictionsNone \
 		| kubectl delete --kubeconfig $(K8S_KUBECONFIG) -f -
-.PHONY: k8s-destroy-%
+.PHONY: template-k8s-destroy-%
 
 ## Destroy Kubernetes manifests for Dependency-Track
 k8s-destroy-dependency-track:
-	@$(MAKE) k8s-destroy-$(K8S_ENVIRONMENT) \
-		K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-destroy-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-destroy-dependency-track
 
 # ── Kubernetes Rendering ─────────────────────────────────────────────────────────────────────────
 
-# Template Kubernetes manifests with Helm and Kustomize
-k8s-render-%:
+# Template to render Kubernetes manifests using Kustomize and Helm charts
+template-k8s-render-%:
 	@mkdir -p render/kustomize/$*/$(K8S_STACK_DIR)
 	@$(K8S_KUSTOMIZE_BIN) build \
 		manifests/overlays/$*/$(K8S_STACK_DIR) \
 		--enable-helm --load-restrictor=LoadRestrictionsNone \
 		--output=./render/kustomize/$*/$(K8S_STACK_DIR)
-.PHONY: k8s-render-%
+.PHONY: template-k8s-render-%
 
 # Render Kubernetes manifests for Dependency-Track
 k8s-render-dependency-track:
-	@$(MAKE) k8s-render-$(K8S_ENVIRONMENT) \
-		K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-render-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-render-dependency-track
 
 ## Render all Kubernetes manifests
@@ -151,23 +148,23 @@ helm-vendor-dependency-track:
 	helm pull dependency-track/dependency-track --version 0.34.0 --untar --untardir charts/
 .PHONY: helm-vendor-dependency-track
 
-# Vendor Helm chart for Traefik
-helm-vendor-traefik:
-	helm repo add traefik https://helm.traefik.io/traefik
-	helm pull traefik/traefik --version 36.3.0 --untar --untardir charts/
-.PHONY: helm-vendor-traefik
-
 # Vendor Helm chart for PostgreSQL
 helm-vendor-postgresql:
 	helm repo add bitnami https://charts.bitnami.com/bitnami
 	helm pull bitnami/postgresql --version 16.7.21 --untar --untardir charts/
 .PHONY: helm-vendor-postgresql
 
+# Vendor Helm chart for Traefik
+helm-vendor-traefik:
+	helm repo add traefik https://traefik.github.io/charts
+	helm pull traefik/traefik --version 36.3.0 --untar --untardir charts/
+.PHONY: helm-vendor-traefik
+
 ## Vendor all Helm charts
 helm-vendor-charts:
 	@$(MAKE) helm-vendor-dependency-track
-	@$(MAKE) helm-vendor-traefik
 	@$(MAKE) helm-vendor-postgresql
+	@$(MAKE) helm-vendor-traefik
 .PHONY: helm-vendor-charts
 
 # ── Helm Charts Rendering ────────────────────────────────────────────────────────────────────────
