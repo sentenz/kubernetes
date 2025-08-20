@@ -133,11 +133,17 @@ k8s-list-pod:
 	kubectl get pods -A --kubeconfig $(K8S_KUBECONFIG)
 .PHONY: k8s-list-pod
 
+# List all ingress controllers
+k8s-list-controller:
+	kubectl get ingressclass --kubeconfig $(K8S_KUBECONFIG)
+.PHONY: k8s-list-controller
+
 ## Monitor the status of all Kubernetes resources
 k8s-monitor-status:
 	@$(MAKE) k8s-list-service
 	@$(MAKE) k8s-list-namespace
 	@$(MAKE) k8s-list-pod
+	@$(MAKE) -s k8s-list-controller
 .PHONY: k8s-monitor-status
 
 # ── Helm Charts ──────────────────────────────────────────────────────────────────────────────────
