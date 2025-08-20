@@ -1,16 +1,16 @@
 # Traefik
 
 - [1. Usage](#1-usage)
-  - [Ingress Controller](#ingress-controller)
-  - [1.1. TLS Certificate](#11-tls-certificate)
-    - [1.1.1. Self-Signed TLS Certificate](#111-self-signed-tls-certificate)
-    - [1.1.2. TLS Secret Configuration](#112-tls-secret-configuration)
+  - [1.1. Ingress Controller](#11-ingress-controller)
+  - [1.2. TLS Certificate](#12-tls-certificate)
+    - [1.2.1. Self-Signed TLS Certificate](#121-self-signed-tls-certificate)
+    - [1.2.2. TLS Secret Configuration](#122-tls-secret-configuration)
 
 ## 1. Usage
 
-### Ingress Controller
+### 1.1. Ingress Controller
 
-The [TraefikIngress Controller](https://doc.traefik.io/traefik/providers/kubernetes-ingress/) for [Kubernetes](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) is configured to manage ingress resources in the Kubernetes cluster.
+The [Traefik Ingress Controller](https://doc.traefik.io/traefik/providers/kubernetes-ingress/) for [Kubernetes](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) is configured to manage ingress resources in the Kubernetes cluster.
 
 ```mermaid
 graph LR;
@@ -32,9 +32,9 @@ graph LR;
   class cluster cluster;
 ```
 
-### 1.1. TLS Certificate
+### 1.2. TLS Certificate
 
-#### 1.1.1. Self-Signed TLS Certificate
+#### 1.2.1. Self-Signed TLS Certificate
 
 The overlay uses a self-signed TLS certificate for local development. The certificate files are included in the overlay directory and referenced in the `kustomization.yaml` file.
 
@@ -55,7 +55,7 @@ The overlay uses a self-signed TLS certificate for local development. The certif
   mkcert dependency-track.localhost api.dependency-track.localhost
   ```
 
-#### 1.1.2. TLS Secret Configuration
+#### 1.2.2. TLS Secret Configuration
 
 - `kustomization.yaml`
   > The TLS secret is configured in the `kustomization.yaml` file of the `overlays`. It uses the generated certificate files to create a Kubernetes secret of type `kubernetes.io/tls`.
