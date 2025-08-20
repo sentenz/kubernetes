@@ -10,15 +10,23 @@ spec:
       containers:
       - name: traefik
         args:
-          - --entryPoints.web.address=0.0.0.0:80
-          - --entryPoints.websecure.address=0.0.0.0:443
+          # HACK Additional arguments for the Traefik feature `additionalArguments`
+          - --entryPoints.web.address=:80
+          - --entryPoints.websecure.address=:443
           - --entryPoints.web.http.redirections.entryPoint.to=websecure
           - --entryPoints.web.http.redirections.entryPoint.scheme=https
+          # NOTE Default behavior with commented out arguments
+          - --global.checkNewVersion
+          - --entryPoints.metrics.address=:9100/tcp
+          # - --entryPoints.traefik.address=:8080/tcp
+          # - --entryPoints.web.address=:8000/tcp
+          # - --entryPoints.websecure.address=:8443/tcp
           - --api.dashboard=true
           - --ping=true
           - --metrics.prometheus=true
           - --metrics.prometheus.entrypoint=metrics
           - --providers.kubernetescrd
+          # - --providers.kubernetescrd.allowEmptyServices=true
           - --providers.kubernetesingress
           - --providers.kubernetesingress.allowEmptyServices=true
           - --providers.kubernetesingress.ingressendpoint.publishedservice=traefik/traefik

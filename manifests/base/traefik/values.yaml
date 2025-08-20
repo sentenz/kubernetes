@@ -1,6 +1,6 @@
 ---
 service:
-  type: ClusterIP
+  type: LoadBalancer
 
 ingressClass:
   name: traefik
@@ -15,9 +15,9 @@ logs:
   general:
     level: INFO
 
-deployment:
-  additionalArguments:
-    - "--entrypoints.web.address=:80"
-    - "--entrypoints.websecure.address=:443"
-    - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-    - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+# FIXME In `render/` directory the Traefik feature `additionalArguments` is not rendered
+# additionalArguments:
+#   - --entryPoints.web.address=:80
+#   - --entryPoints.websecure.address=:443
+#   - --entryPoints.web.http.redirections.entryPoint.to=websecure
+#   - --entryPoints.web.http.redirections.entryPoint.scheme=https
