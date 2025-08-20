@@ -1,13 +1,10 @@
-# Dependency-Track
+# Dependency Track
 
 - [1. Usage](#1-usage)
   - [1.1. FQDN](#11-fqdn)
     - [1.1.1. Domain](#111-domain)
     - [1.1.2. Subdomains](#112-subdomains)
-  - [1.2. TLS Certificate](#12-tls-certificate)
-    - [1.2.1. Self-Signed TLS Certificate](#121-self-signed-tls-certificate)
-    - [1.2.2. TLS Secret Configuration](#122-tls-secret-configuration)
-  - [1.3. Troubleshoot](#13-troubleshoot)
+  - [1.2. Troubleshoot](#12-troubleshoot)
 
 ## 1. Usage
 
@@ -15,7 +12,7 @@
 
 #### 1.1.1. Domain
 
-Paths Split the frontend and API into paths under a single hostname, suitable for simpler setups or to access both services under the same domain.
+Domain Paths split the frontend and API into paths under a single hostname, suitable for simpler setups or to access both services under the same domain.
 
 - `values.yaml`
   > The base chart values define the API base URL for the frontend to communicate with the API server.
@@ -140,47 +137,7 @@ Subdomains split the frontend and API into separate subdomains, suitable for mor
         secretName: dependency-track-tls
   ```
 
-### 1.2. TLS Certificate
-
-#### 1.2.1. Self-Signed TLS Certificate
-
-The overlay uses a self-signed TLS certificate for local development. The certificate files are included in the overlay directory and referenced in the `kustomization.yaml` file.
-
-> [!TIP]
-> mkcert is used to generate the certificate, which is suitable for local development and testing purposes. The certificate is not trusted by default, add the self-signed certificate to the browser's trust store or disable certificate verification in API clients.
-
-- FQDN
-  > Generate a self-signed certificate for the single hostname.
-
-  ```bash
-  mkcert dependency-track.localhost
-  ```
-
-- Subdomains
-  > Generate a self-signed certificate for the domain and subdomains.
-
-  ```bash
-  mkcert dependency-track.localhost api.dependency-track.localhost
-  ```
-
-#### 1.2.2. TLS Secret Configuration
-
-- `kustomization.yaml`
-  > The TLS secret is configured in the `kustomization.yaml` file of the `overlays`. It uses the generated certificate files to create a Kubernetes secret of type `kubernetes.io/tls`.
-
-  ```yaml
-  secretGenerator:
-    - name: dependency-track-tls
-      namespace: dependency-track
-      type: "kubernetes.io/tls"
-      files:
-        - tls.crt=dependency-track.localhost+1.pem
-        - tls.key=dependency-track.localhost+1-key.pem
-  generatorOptions:
-    disableNameSuffixHash: true
-  ```
-
-### 1.3. Troubleshoot
+### 1.2. Troubleshoot
 
 - Check Resources
   > Ensure the resources are created and running correctly.

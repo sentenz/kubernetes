@@ -1,17 +1,14 @@
 # Kubernetes
 
-- [1. Usage](#1-usage)
-  - [1.1. Details](#11-details)
-    - [1.1.1. Order of Precedence](#111-order-of-precedence)
-    - [1.1.2. Database URL Naming Convention](#112-database-url-naming-convention)
+- [1. Details](#1-details)
+  - [1.1. Order of Precedence](#11-order-of-precedence)
   - [1.2. Prerequisites](#12-prerequisites)
-  - [1.3. Task Runner](#13-task-runner)
+- [2. Usage](#2-usage)
+  - [2.1. Task Runner](#21-task-runner)
 
-## 1. Usage
+## 1. Details
 
-### 1.1. Details
-
-#### 1.1.1. Order of Precedence
+### 1.1. Order of Precedence
 
 Kustomize assembles and applies configuration in a defined hierarchy to ensure predictable overrides, lowest to highest:
 
@@ -33,25 +30,11 @@ Kustomize assembles and applies configuration in a defined hierarchy to ensure p
 - Overlay Direct Fields
   > Top-level settings in the overlay—such as `namespace:`, `namePrefix:`, `commonLabels:`, `images:`—are applied last, possessing the highest precedence.
 
-#### 1.1.2. Database URL Naming Convention
-
-All PostgreSQL service endpoints are referenced using the fully qualified Kubernetes service DNS format:
-
-```plaintext
-postgresql.<namespace>.svc.cluster.local
-```
-
-For in-cluster applications, the recommended JDBC database URL is:
-
-```plaintext
-jdbc:postgresql://postgresql.<namespace>.svc.cluster.local:5432/<database>?sslmode=disable
-```
-
-Replace `<namespace>` and `<database>` with the actual PostgreSQL namespace and database name. This convention ensures reliable service discovery and avoids ambiguity across different environments.
-
 ### 1.2. Prerequisites
 
-### 1.3. Task Runner
+## 2. Usage
+
+### 2.1. Task Runner
 
 - [Makefile](Makefile)
   > Refer to the Makefile as the Task Runner file.
