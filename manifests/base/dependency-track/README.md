@@ -12,7 +12,7 @@
 
 #### 1.1.1. Domain
 
-Domain Paths split the frontend and API into paths under a single hostname, suitable for simpler setups or to access both services under the same domain.
+Domain Paths ([Ingress Fan Out](https://kubernetes.io/docs/concepts/services-networking/ingress/#simple-fanout)) split the frontend and API into paths under a single hostname, suitable for simpler setups or to access both services under the same domain.
 
 - `values.yaml`
   > The base chart values define the API base URL for the frontend to communicate with the API server.
@@ -26,6 +26,9 @@ Domain Paths split the frontend and API into paths under a single hostname, suit
   >
   > - FQDN `dependency-track.localhost`
   > - Frontend on `/`, API on `/api` and `/health`
+
+  > [!NOTE]
+  > [Secure an Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) by specifying a Secret that contains a TLS private key and certificate.
 
   ```yaml
   apiVersion: networking.k8s.io/v1
@@ -70,7 +73,7 @@ Domain Paths split the frontend and API into paths under a single hostname, suit
 
 #### 1.1.2. Subdomains
 
-Subdomains split the frontend and API into separate subdomains, suitable for more complex and distinct setups.
+Subdomains ([Ingress Name Based](https://kubernetes.io/docs/concepts/services-networking/ingress/#name-based-virtual-hosting)) split the frontend and API into separate subdomains, suitable for more complex and distinct setups.
 
 - `values.yaml`
   > The base chart values define the API base URL for the frontend to communicate with the API server.
@@ -84,6 +87,9 @@ Subdomains split the frontend and API into separate subdomains, suitable for mor
   >
   > - FQDN `dependency-track.localhost`
   > - Frontend on `dependency-track.localhost`, API on `api.dependency-track.localhost`
+
+  > [!NOTE]
+  > [Secure an Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) by specifying a Secret that contains a TLS private key and certificate.
 
   ```yaml
   apiVersion: networking.k8s.io/v1
