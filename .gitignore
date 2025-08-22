@@ -2,7 +2,7 @@
 
 ### Helm ###
 # Chart dependencies
-**/charts/*.tgz
+**/charts/**/*.tgz
 
 logs/
 render/

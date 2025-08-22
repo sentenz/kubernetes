@@ -1,14 +1,82 @@
 # Kubernetes
 
 - [1. Details](#1-details)
-  - [1.1. Order of Precedence](#11-order-of-precedence)
-  - [1.2. Prerequisites](#12-prerequisites)
+  - [1.1. Conceptual Diagram](#11-conceptual-diagram)
+  - [1.2. Order of Precedence](#12-order-of-precedence)
+  - [1.3. Prerequisites](#13-prerequisites)
 - [2. Usage](#2-usage)
   - [2.1. Task Runner](#21-task-runner)
 
 ## 1. Details
 
-### 1.1. Order of Precedence
+### 1.1. Conceptual Diagram
+
+```mermaid
+flowchart TD
+    internet([Client])
+    lb[External Load Balancer<br>Ingress Managed]
+    internet --> |DNS Request<br>example.com| lb --> icService
+
+    subgraph cluster [Kubernetes Cluster]
+        direction TB
+
+        icService[Ingress Service<br>Type: LoadBalancer] --> ic
+
+        subgraph cloud [Node]
+          ic[Ingress Controller<br>Pod]
+        end
+
+        ingressResource[Ingress Resource<br>YAML Manifest]
+
+        subgraph ns[Namespace]
+            serviceA[Frontend Service<br>Type: ClusterIP]
+            serviceA --> podA1
+            serviceA --> podA2
+
+            subgraph node1[Node]
+                podA1[Frontend<br>Pod 1]
+                podA2[Frontend<br>Pod 2]
+            end
+
+            serviceB[API Service<br>Type: ClusterIP]
+            serviceB --> podB1
+            serviceB --> podB2
+
+            subgraph node2[Node]
+                podB1[API<br>Pod 1]
+                podB2[API<br>Pod 2]
+            end
+        end
+
+        ingressResource -.-> |Configures| ic
+
+        ic --> |Routes to <code>/</code>| serviceA
+        ic --> |Routes to <code>/api</code>| serviceB
+    end
+```
+
+- Client
+  > The *external* entity making an HTTP/HTTPS request to an application.
+
+- Load Balancer
+  > A *external* managed service provided by a cloud provider (AWS, GCP, Azure) outside of the Kubernetes cluster, created automatically by the Service of type `LoadBalancer`. Operates at Layer 4 (TCP/UDP) or Layer 7 (HTTP/HTTPS).
+
+- Ingress Resource
+  > A declarative Kubernetes API object that specifies routing rules (e.g., host-based, path-based) for external traffic. Centralized management as a single entry point for all HTTP/HTTPS traffic, security (TLS termination) and observability (logging, metrics).
+
+- Ingress Service
+  > A Kubernetes Service that targets the Pods of the Ingress Controller. Setting its type to `LoadBalancer`, instructs to provision an external load balancer to route traffic to the nodes on the specific `NodePort` of the service.
+
+- Ingress Controller
+  > A reverse proxy server (Nginx, Traefik, or Envoy) running as a active component in a Pod within the cluster. Responsible for fulfilling the rules defined in the Ingress Resource.
+
+- Services
+  > The Ingress Controller sends traffic to a regular Kubernetes Service of type `ClusterIP`. The Service acts as a stable internal endpoint and load balancer, distributing traffic to the healthy Pods that match its *label selector*.
+
+- Pods
+  > The Ingress Controller routes traffic to internal ClusterIP Services, which then forward it to the application Pods.
+
+### 1.2. Order of Precedence
 
 Kustomize assembles and applies configuration in a defined hierarchy to ensure predictable overrides, lowest to highest:
 
@@ -28,9 +96,9 @@ Kustomize assembles and applies configuration in a defined hierarchy to ensure p
   > Specified in overlays (`patches:`, `transformers:`), they override earlier modifications.
 
 - Overlay Direct Fields
-  > Top-level settings in the overlay—such as `namespace:`, `namePrefix:`, `commonLabels:`, `images:`—are applied last, possessing the highest precedence.
+  > Top-level settings in the overlay such as `namespace:`, `namePrefix:`, `commonLabels:`, `images:` are applied last, possessing the highest precedence.
 
-### 1.2. Prerequisites
+### 1.3. Prerequisites
 
 ## 2. Usage
 

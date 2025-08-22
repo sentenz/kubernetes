@@ -138,12 +138,16 @@ k8s-list-controller:
 	kubectl get ingressclass --kubeconfig $(K8S_KUBECONFIG)
 .PHONY: k8s-list-controller
 
-## Monitor the status of all Kubernetes resources
+## Monitor the status of Kubernetes resources
 k8s-monitor-status:
-	@$(MAKE) k8s-list-service
-	@$(MAKE) k8s-list-namespace
-	@$(MAKE) k8s-list-pod
+	@echo "──── K8s Services ────────────────────────────────────────────────────────────────────────"
+	@$(MAKE) -s k8s-list-service
+	@echo "──── K8s Namespaces ──────────────────────────────────────────────────────────────────────"
+	@$(MAKE) -s k8s-list-namespace
+	@echo "──── K8s Ingress Controllers ─────────────────────────────────────────────────────────────"
 	@$(MAKE) -s k8s-list-controller
+	@echo "──── K8s Pods ────────────────────────────────────────────────────────────────────────────"
+	@$(MAKE) -s k8s-list-pod
 .PHONY: k8s-monitor-status
 
 # ── Helm Charts ──────────────────────────────────────────────────────────────────────────────────
@@ -151,19 +155,19 @@ k8s-monitor-status:
 # Vendor Helm chart for Dependency-Track
 helm-vendor-dependency-track:
 	helm repo add dependency-track https://dependencytrack.github.io/helm-charts
-	helm pull dependency-track/dependency-track --version 0.34.0 --untar --untardir charts/
+	helm pull dependency-track/dependency-track --version 0.35.0 --untar --untardir charts/
 .PHONY: helm-vendor-dependency-track
 
 # Vendor Helm chart for PostgreSQL
 helm-vendor-postgresql:
 	helm repo add bitnami https://charts.bitnami.com/bitnami
-	helm pull bitnami/postgresql --version 16.7.21 --untar --untardir charts/
+	helm pull bitnami/postgresql --version 16.7.26 --untar --untardir charts/
 .PHONY: helm-vendor-postgresql
 
 # Vendor Helm chart for Traefik
 helm-vendor-traefik:
 	helm repo add traefik https://traefik.github.io/charts
-	helm pull traefik/traefik --version 36.3.0 --untar --untardir charts/
+	helm pull traefik/traefik --version 37.0.0 --untar --untardir charts/
 .PHONY: helm-vendor-traefik
 
 ## Vendor all Helm charts

@@ -1,36 +1,17 @@
 # Traefik
 
 - [1. Usage](#1-usage)
-  - [1.1. Ingress Controller](#11-ingress-controller)
+  - [1.1. Details](#11-details)
   - [1.2. TLS Certificate](#12-tls-certificate)
     - [1.2.1. Self-Signed TLS Certificate](#121-self-signed-tls-certificate)
     - [1.2.2. TLS Secret Configuration](#122-tls-secret-configuration)
 
 ## 1. Usage
 
-### 1.1. Ingress Controller
+### 1.1. Details
 
-The [Traefik Ingress Controller](https://doc.traefik.io/traefik/providers/kubernetes-ingress/) for [Kubernetes](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) is configured to manage ingress resources in the Kubernetes cluster.
-
-```mermaid
-graph LR;
-  client([client])-. Ingress-managed load balancer <br> Traefik .->ingress[Ingress <br> dependency-track.localhost];
-  ingress-->|/api|service1[Service 1 <br> api-server:web];
-  ingress-->|/|service2[Service 2 <br> frontend:web];
-  subgraph Cluster
-  ingress;
-  service1-->pod1[Pod];
-  service1-->pod2[Pod];
-  service2-->pod3[Pod];
-  service2-->pod4[Pod];
-  end
-  classDef plain fill:#ddd,stroke:#fff,stroke-width:4px,color:#000;
-  classDef k8s fill:#326ce5,stroke:#fff,stroke-width:4px,color:#fff;
-  classDef cluster fill:#fff,stroke:#bbb,stroke-width:2px,color:#326ce5;
-  class ingress,service1,service2,pod1,pod2,pod3,pod4 k8s;
-  class client plain;
-  class cluster cluster;
-```
+- Ingress Controller
+  > The [Traefik Ingress Controller](https://doc.traefik.io/traefik/providers/kubernetes-ingress/) for [Kubernetes](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) is configured to manage ingress resources in the Kubernetes cluster.
 
 ### 1.2. TLS Certificate
 

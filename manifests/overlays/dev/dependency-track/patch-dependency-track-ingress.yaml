@@ -7,6 +7,10 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - "dependency-track.localhost"
+      secretName: dependency-track-tls
   rules:
     - host: "dependency-track.localhost"
       http:
@@ -32,7 +36,3 @@ spec:
                 name: dependency-track-frontend
                 port:
                   name: web
-  tls:
-    - hosts:
-        - "dependency-track.localhost"
-      secretName: dependency-track-tls

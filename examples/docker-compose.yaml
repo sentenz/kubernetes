@@ -2,7 +2,7 @@ services:
   k3s-server:
     image: "rancher/k3s:${K3S_VERSION:-latest}"
     hostname: k3s-server
-    command: server --cluster-init --disable servicelb --disable traefik
+    command: server --cluster-init --disable traefik
     privileged: true
     tmpfs:
       - /run
