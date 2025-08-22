@@ -14,7 +14,11 @@
 ```mermaid
 flowchart TD
     internet([Client])
-    lb[External Load Balancer<br>Ingress Managed]
+
+    subgraph cloud [Cloud Provider]
+        lb[External Load Balancer<br>Ingress Managed]
+    end
+
     internet --> |DNS Request<br>example.com| lb --> icService
 
     subgraph cluster [Kubernetes Cluster]
@@ -22,11 +26,12 @@ flowchart TD
 
         icService[Ingress Service<br>Type: LoadBalancer] --> ic
 
-        subgraph cloud [Node]
+        subgraph node0 [Node]
           ic[Ingress Controller<br>Pod]
         end
 
         ingressResource[Ingress Resource<br>YAML Manifest]
+        ingressClass[IngressClass<br>Reverse Proxy]
 
         subgraph ns[Namespace]
             serviceA[Frontend Service<br>Type: ClusterIP]
@@ -48,7 +53,7 @@ flowchart TD
             end
         end
 
-        ingressResource -.-> |Configures| ic
+        ingressResource -.-> |Configures| ingressClass -.-> |Defines| ic
 
         ic --> |Routes to <code>/</code>| serviceA
         ic --> |Routes to <code>/api</code>| serviceB
@@ -67,11 +72,15 @@ flowchart TD
 - Ingress Service
   > A Kubernetes Service that targets the Pods of the Ingress Controller. Setting its type to `LoadBalancer`, instructs to provision an external load balancer to route traffic to the nodes on the specific `NodePort` of the service.
 
+- IngressClass
+  > A Kubernetes resource that defines the Ingress Controller to use for a specific Ingress Resource. It specifies the controller implementation (e.g., Nginx, Traefik) and its configuration.
+
 - Ingress Controller
   > A reverse proxy server (Nginx, Traefik, or Envoy) running as a active component in a Pod within the cluster. Responsible for fulfilling the rules defined in the Ingress Resource.
 
 - Services
-  > The Ingress Controller sends traffic to a regular Kubernetes Service of type `ClusterIP`. The Service acts as a stable internal endpoint and load balancer, distributing traffic to the healthy Pods that match its *label selector*.
+  > - **LoadBalancer**: The Ingress Service of type `LoadBalancer` is created to provisions an external load balancer and expose the Ingress Controller to external traffic.
+  > - **ClusterIP**: The Ingress Controller sends traffic to a regular Kubernetes Service of type `ClusterIP`. The Service is the internal default cluster communication to endpoints and load balancer, distributing traffic to the healthy Pods that match its *label selector*.
 
 - Pods
   > The Ingress Controller routes traffic to internal ClusterIP Services, which then forward it to the application Pods.
