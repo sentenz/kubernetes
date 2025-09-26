@@ -8,7 +8,7 @@ global:
       database: dtrack
 
 primary:
-  resourcesPreset: "small"
+  resourcesPreset: small
   service:
     type: ClusterIP
 

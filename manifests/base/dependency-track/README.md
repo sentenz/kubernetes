@@ -2,100 +2,15 @@
 
 - [1. Usage](#1-usage)
   - [1.1. DNS](#11-dns)
-    - [1.1.1. Path-Based](#111-path-based)
-    - [1.1.2. Host-Based](#112-host-based)
+    - [1.1.1. Host-Based](#111-host-based)
+    - [1.1.2. Path-Based](#112-path-based)
   - [1.2. Troubleshoot](#12-troubleshoot)
 
 ## 1. Usage
 
 ### 1.1. DNS
 
-#### 1.1.1. Path-Based
-
-Path-Based DNS Routing ([Ingress Fan-Out](https://kubernetes.io/docs/concepts/services-networking/ingress/#simple-fanout)) directs traffic for the Frontend and API through distinct URL paths under a single hostname.
-
-> [!NOTE]
-> The DNS system only resolves domains to an IP addresses. Path-based routing URL paths interpretion is performed by an application gateway, reverse proxy, or load balancer after DNS resolution.
-
-1. Conceptual Diagram
-
-    ```mermaid
-    graph LR;
-      client([Client])-. Load Balancer<br>Ingress Managed .->ingress[Ingress<br>Host: dependency-track.com];
-      ingress-->|Path: /| service1[Service<br>Frontend];
-      ingress-->|Path: /api| service2[Service<br>API];
-      subgraph Cluster
-        ingress;
-        service1-->pod1[Pod];
-        service1-->pod2[Pod];
-        service2-->pod3[Pod];
-        service2-->pod4[Pod];
-      end
-    ```
-
-2. Example and Explanation
-
-    - `values.yaml`
-      > The base chart values define the API base URL for the frontend to communicate with the API server.
-
-      ```yaml
-      apiBaseUrl: "https://dependency-track.localhost"
-      ```
-
-    - `patch-dependency-track-ingress.yaml`
-      > The ingress configuration for the single hostname using `traefik` defined in `overlays`, modifies the base ingress to route traffic to the appropriate services based on the path.
-      >
-      > - FQDN
-      >   - `dependency-track.localhost`
-      > - URL Path
-      >   - Frontend on `/`
-      >   - API on `/api` and `/health`
-
-      > [!NOTE]
-      > [Secure an Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) by specifying a Secret that contains a TLS private key and certificate.
-
-      ```yaml
-      apiVersion: networking.k8s.io/v1
-      kind: Ingress
-      metadata:
-        name: dependency-track
-        namespace: dependency-track
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-      spec:
-        ingressClassName: traefik
-        rules:
-          - host: "dependency-track.localhost"
-            http:
-              paths:
-                - path: /api
-                  pathType: Prefix
-                  backend:
-                    service:
-                      name: dependency-track-api-server
-                      port:
-                        name: web
-                - path: /health
-                  pathType: Prefix
-                  backend:
-                    service:
-                      name: dependency-track-api-server
-                      port:
-                        name: web
-                - path: /
-                  pathType: Prefix
-                  backend:
-                    service:
-                      name: dependency-track-frontend
-                      port:
-                        name: web
-        tls:
-          - hosts:
-              - "dependency-track.localhost"
-            secretName: dependency-track-tls
-      ```
-
-#### 1.1.2. Host-Based
+#### 1.1.1. Host-Based
 
 Host-Based DNS Resolution ([Ingress Name-Based](https://kubernetes.io/docs/concepts/services-networking/ingress/#name-based-virtual-hosting)) is determined by the separate subdomains provided in the request to route traffic to the Frontend and API.
 
@@ -105,17 +20,21 @@ Host-Based DNS Resolution ([Ingress Name-Based](https://kubernetes.io/docs/conce
 1. Conceptual Diagram
 
     ```mermaid
-    graph LR;
-      client([Client])-. Load Balancer<br>Ingress Managed .->ingress[Ingress];
-      ingress-->|Host: dependency-track.com|service1[Service<br>Frontend];
-      ingress-->|Host: api.dependency-track.com|service2[Service<br>API];
-      subgraph Cluster
-        ingress;
-        service1-->pod1[Pod];
-        service1-->pod2[Pod];
-        service2-->pod3[Pod];
-        service2-->pod4[Pod];
+    flowchart LR
+      Client[[Client]] -.-> |TLS/HTTPS| lb -.-> IngressCtrl[Ingress Controller]
+
+      subgraph cloud [Cloud Provider]
+          lb[External Load Balancer<br>Ingress Managed]
       end
+
+
+      subgraph Routing
+        IngressCtrl -->|host dependency-track.com| SvcWeb[Service Frontend]
+        IngressCtrl -->|host api.dependency-track.com| SvcAPI[Service API]
+      end
+
+      SvcWeb --> PodsWeb[Pods]
+      SvcAPI --> PodsAPI[Pods]
     ```
 
 2. Example and Explanation
@@ -186,6 +105,95 @@ Host-Based DNS Resolution ([Ingress Name-Based](https://kubernetes.io/docs/conce
           - hosts:
               - "dependency-track.localhost"
               - "api.dependency-track.localhost"
+            secretName: dependency-track-tls
+      ```
+
+#### 1.1.2. Path-Based
+
+Path-Based DNS Routing ([Ingress Fan-Out](https://kubernetes.io/docs/concepts/services-networking/ingress/#simple-fanout)) directs traffic for the Frontend and API through distinct URL paths under a single hostname.
+
+> [!NOTE]
+> The DNS system only resolves domains to an IP addresses. Path-based routing URL paths interpretion is performed by an application gateway, reverse proxy, or load balancer after DNS resolution.
+
+1. Conceptual Diagram
+
+    ```mermaid
+    flowchart LR
+      Client[[Client]] -.-> |TLS/HTTPS| lb -.-> IngressCtrl[Ingress Controller]
+
+      subgraph cloud [Cloud Provider]
+          lb[External Load Balancer<br>Ingress Managed]
+      end
+
+
+      subgraph Routing
+        IngressCtrl -->|host dependency-track.com<br>path /| SvcWeb[Service Frontend]
+        IngressCtrl -->|host dependency-track.com<br>path /api| SvcAPI[Service API]
+      end
+
+      SvcWeb --> PodsWeb[Pods]
+      SvcAPI --> PodsAPI[Pods]
+    ```
+
+2. Example and Explanation
+
+    - `values.yaml`
+      > The base chart values define the API base URL for the frontend to communicate with the API server.
+
+      ```yaml
+      apiBaseUrl: "https://dependency-track.localhost"
+      ```
+
+    - `patch-dependency-track-ingress.yaml`
+      > The ingress configuration for the single hostname using `traefik` defined in `overlays`, modifies the base ingress to route traffic to the appropriate services based on the path.
+      >
+      > - FQDN
+      >   - `dependency-track.localhost`
+      > - URL Path
+      >   - Frontend on `/`
+      >   - API on `/api` and `/health`
+
+      > [!NOTE]
+      > [Secure an Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) by specifying a Secret that contains a TLS private key and certificate.
+
+      ```yaml
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: dependency-track
+        namespace: dependency-track
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      spec:
+        ingressClassName: traefik
+        rules:
+          - host: "dependency-track.localhost"
+            http:
+              paths:
+                - path: /api
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: dependency-track-api-server
+                      port:
+                        name: web
+                - path: /health
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: dependency-track-api-server
+                      port:
+                        name: web
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: dependency-track-frontend
+                      port:
+                        name: web
+        tls:
+          - hosts:
+              - "dependency-track.localhost"
             secretName: dependency-track-tls
       ```
 
