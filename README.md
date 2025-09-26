@@ -1,62 +1,72 @@
 # Kubernetes
 
 - [1. Details](#1-details)
-  - [1.1. Conceptual Diagram](#11-conceptual-diagram)
-  - [1.2. Order of Precedence](#12-order-of-precedence)
-  - [1.3. Prerequisites](#13-prerequisites)
+  - [1.1. Charts](#11-charts)
+  - [1.2. Architecture Diagrams](#12-architecture-diagrams)
+  - [1.3. Order of Precedence](#13-order-of-precedence)
+  - [1.4. Prerequisites](#14-prerequisites)
 - [2. Usage](#2-usage)
-  - [2.1. Task Runner](#21-task-runner)
+  - [2.1. Authentication](#21-authentication)
+    - [2.1.1. Kube Config](#211-kube-config)
+  - [2.2. Cryptographic](#22-cryptographic)
+    - [2.2.1. TLS Certificates and Private Keys](#221-tls-certificates-and-private-keys)
+    - [2.2.2. CA-Signed Certificates from CSRs](#222-ca-signed-certificates-from-csrs)
+  - [2.3. Secret Manager](#23-secret-manager)
+    - [2.3.1. SOPS](#231-sops)
+  - [2.4. Task Runner](#24-task-runner)
+    - [2.4.1. Makefile](#241-makefile)
+- [3. Troubleshoot](#3-troubleshoot)
+  - [3.1. TODO](#31-todo)
+- [4. References](#4-references)
 
 ## 1. Details
 
-### 1.1. Conceptual Diagram
+### 1.1. Charts
+
+TODO
+
+### 1.2. Architecture Diagrams
 
 ```mermaid
 flowchart TD
-    internet([Client])
+    internet[[Client]]
 
-    subgraph cloud [Cloud Provider]
+    subgraph Cloud Provider
         lb[External Load Balancer<br>Ingress Managed]
     end
 
-    internet --> |DNS Request<br>example.com| lb --> icService
+    internet --> |TLS/HTTPS| lb --> icService
 
-    subgraph cluster [Kubernetes Cluster]
+    subgraph Kubernetes Cluster
         direction TB
 
-        icService[Ingress Service<br>Type: LoadBalancer] --> ingressController
-
-        subgraph node0 [Node]
-          ingressController[Ingress Controller<br>Pod]
+        subgraph Ingress Control Plane
+          ingressResource[Ingress Resource<br>YAML Manifest]
+          ingressClass[IngressClass<br>Reverse Proxy]
+          icService[Ingress Service<br>Type: LoadBalancer] --> ingressController[Ingress Controller<br>Pod]
+          ingressResource -. configures .-> ingressClass -. selects .-> ingressController
         end
 
-        ingressResource[Ingress Resource<br>YAML Manifest]
-        ingressClass[IngressClass<br>Reverse Proxy]
-
-        subgraph ns[Namespace]
-            serviceA[Frontend Service<br>Type: ClusterIP]
+        subgraph Namespace
+            serviceA[Web Service<br>Type: ClusterIP]
             serviceA --> podA1
             serviceA --> podA2
-
             subgraph node1[Node]
-                podA1[Frontend<br>Pod 1]
-                podA2[Frontend<br>Pod 2]
+                podA1[Web<br>Pod 1]
+                podA2[Web<br>Pod 2]
             end
 
             serviceB[API Service<br>Type: ClusterIP]
             serviceB --> podB1
             serviceB --> podB2
-
             subgraph node2[Node]
                 podB1[API<br>Pod 1]
                 podB2[API<br>Pod 2]
             end
         end
 
-        ingressResource -.-> |Configures| ingressClass -.-> |Defines| ingressController
-
-        ingressController --> |Routes to <code>/</code>| serviceA
-        ingressController --> |Routes to <code>/api</code>| serviceB
+        ingressController --> |Routes<br/>host foo.example.com<br/>path /| serviceA
+        ingressController --> |Routes<br/>host foo.example.com<br/>path /api| serviceB
     end
 ```
 
@@ -85,7 +95,7 @@ flowchart TD
 - Pods
   > The Ingress Controller routes traffic to internal ClusterIP Services, which then forward it to the application Pods.
 
-### 1.2. Order of Precedence
+### 1.3. Order of Precedence
 
 Kustomize assembles and applies configuration in a defined hierarchy to ensure predictable overrides, lowest to highest:
 
@@ -107,17 +117,81 @@ Kustomize assembles and applies configuration in a defined hierarchy to ensure p
 - Overlay Direct Fields
   > Top-level settings in the overlay such as `namespace:`, `namePrefix:`, `commonLabels:`, `images:` are applied last, possessing the highest precedence.
 
-### 1.3. Prerequisites
+### 1.4. Prerequisites
+
+TODO
 
 ## 2. Usage
 
-### 2.1. Task Runner
+### 2.1. Authentication
+
+#### 2.1.1. Kube Config
+
+TODO
+
+### 2.2. Cryptographic
+
+#### 2.2.1. TLS Certificates and Private Keys
+
+TODO
+
+#### 2.2.2. CA-Signed Certificates from CSRs
+
+TODO
+
+### 2.3. Secret Manager
+
+#### 2.3.1. SOPS
+
+1. GPG Key Pair Generation
+
+    - Task Runner
+      > Generate a new key pair to be used with SOPS.
+
+      > [!NOTE]
+      > The UID can be customized via the `SOPS_UID` variable (defaults to `sops-k8s`).
+
+      ```sh
+      make secret-gpg-generate SOPS_UID=<uid>
+      ```
+
+2. GPG Public Key Fingerprint
+
+    - Task Runner
+      > Print the  GPG Public Key fingerprint associated with a given UID.
+
+      ```sh
+      make secret-gpg-show SOPS_UID=<uid>
+      ```
+
+    - [.sops.yaml](.sops.yaml)
+      > The GPG UID is required for populating in `.sops.yaml`.
+
+      ```yaml
+      creation_rules:
+        - pgp: "<fingerprint>" # <uid>
+      ```
+
+3. SOPS Encrypt/Decrypt
+
+    - Task Runner
+      > Encrypt/decrypt one or more files in place using SOPS.
+
+      ```sh
+      make secret-sops-encrypt <files>
+      make secret-sops-decrypt <files>
+      ```
+
+### 2.4. Task Runner
+
+#### 2.4.1. Makefile
 
 - [Makefile](Makefile)
-  > Refer to the Makefile as the Task Runner file.
+  > The Makefile serves as the task runner.
 
   > [!NOTE]
-  > Run the `make help` command in the terminal to list the tasks used for the project.
+  > - Run the `make help` command in the terminal to list the tasks used for the project.
+  > - Targets **must** have a leading comment line starting with `##` to be included in the task list.
 
   ```plaintext
   $ make help
@@ -140,3 +214,13 @@ Kustomize assembles and applies configuration in a defined hierarchy to ensure p
           helm-vendor-charts              Vendor all Helm charts
           helm-render-charts              Render all Helm charts
   ```
+
+## 3. Troubleshoot
+
+### 3.1. TODO
+
+TODO
+
+## 4. References
+
+- Sentenz [Kubernetes](TODO) article.

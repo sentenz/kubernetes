@@ -7,6 +7,10 @@ endif
 
 # Define Variables
 
+SHELL := bash
+.SHELLFLAGS := -euo pipefail -c
+.ONESHELL:
+
 HELM_RELEASE_NAME ?= mychart
 HELM_CHART_DIR ?= charts
 HELM_VALUES_FILE ?= values.yaml
@@ -15,7 +19,6 @@ K8S_NAMESPACE ?= default
 K8S_KUSTOMIZE_BIN := kustomize
 K8S_KUBECONFIG ?= examples/config/kubeconfig.yaml
 K8S_STACK_DIR ?= manifests/overlays
-K8S_ENVIRONMENT ?= $(ENV)
 
 # Define Targets
 
@@ -36,20 +39,19 @@ permission:
 
 ## Initialize a software development workspace with requisites
 bootstrap:
-	@$(MAKE) -s permission
+	@$(MAKE) -s permission; \
 	cd $(@D)/scripts && chmod +x bootstrap.sh && ./bootstrap.sh
 .PHONY: bootstrap
 
 ## Install and configure all dependencies essential for development
 setup:
-	@$(MAKE) -s permission
-	# TODO: Implement setup script
-	# cd $(@D)/scripts && chmod +x setup.sh && ./setup.sh
+	@$(MAKE) -s permission; \
+	cd $(@D)/scripts && chmod +x setup.sh && ./setup.sh
 .PHONY: setup
 
 ## Remove development artifacts and restore the host to its pre-setup state
 teardown:
-	@$(MAKE) -s permission
+	@$(MAKE) -s permission; \
 	cd $(@D)/scripts && chmod +x teardown.sh && ./teardown.sh
 .PHONY: teardown
 
@@ -67,10 +69,21 @@ k8s-teardown:
 
 # ── Kubernetes Deploy & Destroy ──────────────────────────────────────────────────────────────────
 
+# Interactive user confirmation before proceeding with Kubernetes Deploy & Destroy
+k8s-confirm:
+	@echo ""
+	@read -r -p "Confirm: Proceed with 'Kubernetes' in '$(ENV)'$(if $(K8S_STACK_DIR), targeting '$(K8S_STACK_DIR)',)? [yes $(ENV)/no] " confirm; \
+		if [[ "$$confirm" != "yes $(ENV)" ]]; then \
+			echo "Aborted."; \
+			exit 1; \
+		fi
+.PHONY: k8s-confirm
+
 # Usage: make k8s-deploy-<env>
 #
 # Template to deploy Kubernetes manifests integrated Helm charts and Kustomize environment-specific overlays
 template-k8s-deploy-%:
+	@$(MAKE) -s k8s-confirm
 	@$(K8S_KUSTOMIZE_BIN) build manifests/overlays/$*/$(K8S_STACK_DIR) \
 		--enable-helm --load-restrictor=LoadRestrictionsNone \
 		| kubectl apply --kubeconfig $(K8S_KUBECONFIG) -f -
@@ -78,13 +91,14 @@ template-k8s-deploy-%:
 
 ## Deploy Kubernetes manifests for Dependency-Track
 k8s-deploy-dependency-track:
-	@$(MAKE) template-k8s-deploy-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-deploy-$(K8S_ENV) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-deploy-dependency-track
 
 # Usage: make k8s-destroy-<env>
 #
 # Template to destroy Kubernetes manifests integrated Helm charts and Kustomize environment-specific overlays
 template-k8s-destroy-%:
+	@$(MAKE) -s k8s-confirm
 	@$(K8S_KUSTOMIZE_BIN) build manifests/overlays/$*/$(K8S_STACK_DIR) \
 		--enable-helm --load-restrictor=LoadRestrictionsNone \
 		| kubectl delete --kubeconfig $(K8S_KUBECONFIG) -f -
@@ -92,7 +106,7 @@ template-k8s-destroy-%:
 
 ## Destroy Kubernetes manifests for Dependency-Track
 k8s-destroy-dependency-track:
-	@$(MAKE) template-k8s-destroy-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-destroy-$(K8S_ENV) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-destroy-dependency-track
 
 # ── Kubernetes Rendering ─────────────────────────────────────────────────────────────────────────
@@ -108,7 +122,7 @@ template-k8s-render-%:
 
 # Render Kubernetes manifests for Dependency-Track
 k8s-render-dependency-track:
-	@$(MAKE) template-k8s-render-$(K8S_ENVIRONMENT) K8S_STACK_DIR=dependency-track
+	@$(MAKE) template-k8s-render-$(K8S_ENV) K8S_STACK_DIR=dependency-track
 .PHONY: k8s-render-dependency-track
 
 ## Render all Kubernetes manifests
@@ -155,13 +169,13 @@ k8s-monitor-status:
 # Vendor Helm chart for Dependency-Track
 helm-vendor-dependency-track:
 	helm repo add dependency-track https://dependencytrack.github.io/helm-charts
-	helm pull dependency-track/dependency-track --version 0.35.0 --untar --untardir charts/
+	helm pull dependency-track/dependency-track --version 0.36.0 --untar --untardir charts/
 .PHONY: helm-vendor-dependency-track
 
 # Vendor Helm chart for PostgreSQL
 helm-vendor-postgresql:
 	helm repo add bitnami https://charts.bitnami.com/bitnami
-	helm pull bitnami/postgresql --version 16.7.26 --untar --untardir charts/
+	helm pull bitnami/postgresql --version 16.7.27 --untar --untardir charts/
 .PHONY: helm-vendor-postgresql
 
 # Vendor Helm chart for Traefik
@@ -226,6 +240,97 @@ helm-render-charts:
 	@$(MAKE) -s helm-render-traefik
 	@$(MAKE) -s helm-render-postgresql
 .PHONY: helm-render-charts
+
+# ── Secret Manager ───────────────────────────────────────────────────────────────────────────────
+
+SOPS_UID ?= sops-k8s
+
+# Usage: make secret-gpg-generate SOPS_UID=<uid>
+#
+## Generate a new GPG key pair for SOPS
+secret-gpg-generate:
+	@gpg --batch --quiet --passphrase '' --quick-generate-key "$(SOPS_UID)" ed25519 cert,sign 0
+	@NEW_FPR="$$(gpg --list-keys --with-colons "$(SOPS_UID)" | awk -F: '/^fpr:/ {print $$10; exit}')"
+	@gpg --batch --quiet --passphrase '' --quick-add-key "$${NEW_FPR}" cv25519 encrypt 0
+.PHONY: secret-gpg-generate
+
+# Usage: make secret-gpg-show SOPS_UID=<uid>
+#
+## Print the GPG key fingerprint for SOPS (.sops.yaml)
+secret-gpg-show:
+	@FPR="$$(gpg --list-keys --with-colons "$(SOPS_UID)" | awk -F: '/^fpr:/ {print $$10; exit}')"; \
+	if [ -z "$${FPR}" ]; then \
+		echo "error: no fingerprint found for UID '$(SOPS_UID)'" >&2; \
+		exit 1; \
+	fi; \
+	echo -e "UID: $(SOPS_UID)\nFingerprint: $${FPR}"
+.PHONY: secret-gpg-show
+
+# Usage: make secret-gpg-remove SOPS_UID=<uid>
+#
+## Remove an existing GPG key for SOPS (interactive)
+secret-gpg-remove:
+	if ! gpg --list-keys "$(SOPS_UID)" >/dev/null 2>&1; then
+		echo "warning: no key found for '$(SOPS_UID)'" >&2
+		exit 0
+	fi
+	echo "info: deleting key for '$(SOPS_UID)'"
+	# Delete private key first, then public key
+	gpg --yes --delete-secret-keys "$(SOPS_UID)"
+	gpg --yes --delete-keys "$(SOPS_UID)"
+.PHONY: secret-gpg-remove
+
+# Usage: make secret-sops-encrypt <files>
+#
+## Encrypt file using SOPS
+secret-sops-encrypt:
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "usage: make secret-sops-encrypt <files>"; \
+		exit 1; \
+	fi
+
+	export PATH="$$PATH:$(shell go env GOPATH 2>/dev/null)/bin"
+	@for file in $(filter-out $@,$(MAKECMDGOALS)); do \
+		if [ -f "$$file" ]; then \
+			sops --encrypt --in-place "$$file"; \
+		else \
+			echo "Skipping (not found): $$file" >&2; \
+		fi; \
+	done
+.PHONY: secret-sops-encrypt
+
+# Usage: make secret-sops-decrypt <files>
+#
+## Decrypt file using SOPS
+secret-sops-decrypt:
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "usage: make secret-sops-encrypt <files>"; \
+		exit 1; \
+	fi
+
+	export PATH="$$PATH:$(shell go env GOPATH 2>/dev/null)/bin"
+	@for file in $(filter-out $@,$(MAKECMDGOALS)); do \
+		if [ -f "$$file" ]; then \
+			sops --decrypt --in-place "$$file"; \
+		else \
+			echo "Skipping (not found): $$file" >&2; \
+		fi; \
+	done
+.PHONY: secret-sops-decrypt
+
+# Usage: make secret-sops-view <file>
+#
+## View a file encrypted with SOPS
+secret-sops-view:
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "usage: make secret-sops-view <file>"; \
+		exit 1; \
+	fi
+
+	export PATH="$$PATH:$(shell go env GOPATH 2>/dev/null)/bin"
+	sops --decrypt "$(filter-out $@,$(MAKECMDGOALS))"
+.PHONY: secret-sops-view
+
 
 
 
