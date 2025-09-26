@@ -24,10 +24,10 @@ flowchart TD
     subgraph cluster [Kubernetes Cluster]
         direction TB
 
-        icService[Ingress Service<br>Type: LoadBalancer] --> ic
+        icService[Ingress Service<br>Type: LoadBalancer] --> ingressController
 
         subgraph node0 [Node]
-          ic[Ingress Controller<br>Pod]
+          ingressController[Ingress Controller<br>Pod]
         end
 
         ingressResource[Ingress Resource<br>YAML Manifest]
@@ -53,10 +53,10 @@ flowchart TD
             end
         end
 
-        ingressResource -.-> |Configures| ingressClass -.-> |Defines| ic
+        ingressResource -.-> |Configures| ingressClass -.-> |Defines| ingressController
 
-        ic --> |Routes to <code>/</code>| serviceA
-        ic --> |Routes to <code>/api</code>| serviceB
+        ingressController --> |Routes to <code>/</code>| serviceA
+        ingressController --> |Routes to <code>/api</code>| serviceB
     end
 ```
 
